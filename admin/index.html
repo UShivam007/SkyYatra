@@ -107,8 +107,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 <script>
 var SUPABASE_URL=SKYVAYU_CONFIG.supabaseUrl;
 var SUPABASE_KEY=SKYVAYU_CONFIG.supabaseKey;
-var ADMIN_PASSWORD='SkyVayu@Admin2026';
+var ADMIN_PASSWORD='SkyVayu@Admin2026'; /* TODO: replace with Supabase Auth */
 var allOperators=[];
+
+function escapeHtml(str){
+  if(str==null)return'';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
 var allPendingAircraft=[];
 
 function sbFetch(path,opts){
@@ -174,9 +184,9 @@ async function loadPendingEmployees(){
     var opName=(e.operators&&e.operators.company_name)||'Unknown';
     var ini=(e.full_name||e.username).split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
     return '<div class="op-card">'
-      +'<div class="op-card-top"><div style="display:flex;align-items:center;gap:12px;"><div style="width:40px;height:40px;border-radius:50%;background:var(--blue-faint);border:0.5px solid var(--blue-border);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:var(--gold);">'+ini+'</div><div><div class="op-company">'+(e.full_name||e.username)+'</div><div class="op-meta">'+opName+' · @'+e.username+'</div></div></div><span class="status-badge status-pending">Pending approval</span></div>'
-      +'<div class="op-details"><div class="op-detail"><span>Employee ID</span>'+(e.employee_id||'—')+'</div><div class="op-detail"><span>Company</span>'+opName+'</div><div class="op-detail"><span>Applied</span>'+new Date(e.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+'</div></div>'
-      +'<div class="action-row"><button class="btn-approve" onclick="approveEmployee(\''+e.id+'\')">&#10003; Approve</button><button class="btn-reject" onclick="showEmpRejectInput(\''+e.id+'\')">&#10007; Reject</button><input class="rejection-input" id="emp-reject-reason-'+e.id+'" placeholder="Reason (optional)"><button class="btn-confirm-reject" id="emp-confirm-reject-'+e.id+'" onclick="rejectEmployee(\''+e.id+'\')">Confirm</button></div>'
+      +'<div class="op-card-top"><div style="display:flex;align-items:center;gap:12px;"><div style="width:40px;height:40px;border-radius:50%;background:var(--blue-faint);border:0.5px solid var(--blue-border);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:var(--gold);">'+escapeHtml(ini)+'</div><div><div class="op-company">'+escapeHtml(e.full_name||e.username)+'</div><div class="op-meta">'+escapeHtml(opName)+' · @'+escapeHtml(e.username)+'</div></div></div><span class="status-badge status-pending">Pending approval</span></div>'
+      +'<div class="op-details"><div class="op-detail"><span>Employee ID</span>'+escapeHtml(e.employee_id||'—')+'</div><div class="op-detail"><span>Company</span>'+escapeHtml(opName)+'</div><div class="op-detail"><span>Applied</span>'+new Date(e.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+'</div></div>'
+      +'<div class="action-row"><button class="btn-approve" onclick="approveEmployee(\''+escapeHtml(e.id)+'\')">&#10003; Approve</button><button class="btn-reject" onclick="showEmpRejectInput(\''+escapeHtml(e.id)+'\')">&#10007; Reject</button><input class="rejection-input" id="emp-reject-reason-'+escapeHtml(e.id)+'" placeholder="Reason (optional)"><button class="btn-confirm-reject" id="emp-confirm-reject-'+escapeHtml(e.id)+'" onclick="rejectEmployee(\''+escapeHtml(e.id)+'\')">Confirm</button></div>'
       +'</div>';
   }).join('');
 }
@@ -252,15 +262,15 @@ function renderOperatorCard(op){
     :'<div class="doc-row" style="opacity:.5;"><div class="doc-name" style="color:var(--text-tertiary);">No document uploaded</div></div>';
   var actionHtml='';
   if(op.approval_status==='pending'){
-    actionHtml='<div class="action-row"><button class="btn-approve" onclick="approveOperator(\''+op.id+'\')">&#10003; Approve</button><button class="btn-reject" onclick="showRejectInput(\''+op.id+'\')">&#10007; Reject</button><input class="rejection-input" id="reject-reason-'+op.id+'" placeholder="Reason (optional)"><button class="btn-confirm-reject" id="confirm-reject-'+op.id+'" onclick="rejectOperator(\''+op.id+'\')">Confirm</button></div>';
+    actionHtml='<div class="action-row"><button class="btn-approve" onclick="approveOperator(\''+escapeHtml(op.id)+'\')">&#10003; Approve</button><button class="btn-reject" onclick="showRejectInput(\''+escapeHtml(op.id)+'\')">&#10007; Reject</button><input class="rejection-input" id="reject-reason-'+escapeHtml(op.id)+'" placeholder="Reason (optional)"><button class="btn-confirm-reject" id="confirm-reject-'+escapeHtml(op.id)+'" onclick="rejectOperator(\''+escapeHtml(op.id)+'\')">Confirm</button></div>';
   }else if(op.approval_status==='approved'){
-    actionHtml='<div class="action-row"><span style="font-size:12px;color:var(--green);">&#10003; Approved</span><button class="btn-undo" style="margin-left:auto;" onclick="revokeOperator(\''+op.id+'\')">Revoke</button></div>';
+    actionHtml='<div class="action-row"><span style="font-size:12px;color:var(--green);">&#10003; Approved</span><button class="btn-undo" style="margin-left:auto;" onclick="revokeOperator(\''+escapeHtml(op.id)+'\')">Revoke</button></div>';
   }else{
-    actionHtml='<div class="action-row">'+(op.rejection_reason?'<span style="font-size:12px;color:var(--red);">'+op.rejection_reason+'</span>':'<span style="font-size:12px;color:var(--text-tertiary);">No reason given</span>')+'<button class="btn-undo" style="margin-left:auto;" onclick="approveOperator(\''+op.id+'\')">Move to approved</button></div>';
+    actionHtml='<div class="action-row">'+(op.rejection_reason?'<span style="font-size:12px;color:var(--red);">'+escapeHtml(op.rejection_reason)+'</span>':'<span style="font-size:12px;color:var(--text-tertiary);">No reason given</span>')+'<button class="btn-undo" style="margin-left:auto;" onclick="approveOperator(\''+escapeHtml(op.id)+'\')">Move to approved</button></div>';
   }
   return '<div class="op-card">'
-    +'<div class="op-card-top"><div><div class="op-company">'+op.company_name+'</div><div class="op-meta">Applied '+fmtDateTime(op.created_at)+(empCount?' &middot; '+empCount+' emp':'')+'</div></div><span class="status-badge '+statusClass+'">'+statusLabel+'</span></div>'
-    +'<div class="op-details"><div class="op-detail"><span>Owner</span>'+(op.owner_name||'—')+'</div><div class="op-detail"><span>Phone</span>'+(op.owner_phone||'—')+'</div><div class="op-detail"><span>Email</span>'+(op.owner_email||'—')+'</div><div class="op-detail"><span>Username</span>'+(owner?'@'+owner.username:'—')+'</div></div>'
+    +'<div class="op-card-top"><div><div class="op-company">'+escapeHtml(op.company_name)+'</div><div class="op-meta">Applied '+fmtDateTime(op.created_at)+(empCount?' &middot; '+empCount+' emp':'')+'</div></div><span class="status-badge '+statusClass+'">'+statusLabel+'</span></div>'
+    +'<div class="op-details"><div class="op-detail"><span>Owner</span>'+escapeHtml(op.owner_name||'—')+'</div><div class="op-detail"><span>Phone</span>'+escapeHtml(op.owner_phone||'—')+'</div><div class="op-detail"><span>Email</span>'+escapeHtml(op.owner_email||'—')+'</div><div class="op-detail"><span>Username</span>'+(owner?'@'+escapeHtml(owner.username):'—')+'</div></div>'
     +docHtml+actionHtml+'</div>';
 }
 
@@ -279,7 +289,7 @@ function docBtn(url,expiry){
 function renderAircraftCard(ac){
   var opName=(ac.operators&&ac.operators.company_name)||'Unknown';
   return '<div class="op-card">'
-    +'<div class="op-card-top"><div><div class="op-company">'+ac.aircraft_type+' &nbsp;&middot;&nbsp; <span style="font-family:monospace;font-size:14px;">'+ac.registration+'</span></div><div class="op-meta">'+opName+(ac.seats?' &middot; '+ac.seats+' seats':'')+'</div></div><span class="status-badge status-pending">Pending review</span></div>'
+    +'<div class="op-card-top"><div><div class="op-company">'+escapeHtml(ac.aircraft_type)+' &nbsp;&middot;&nbsp; <span style="font-family:monospace;font-size:14px;">'+escapeHtml(ac.registration)+'</span></div><div class="op-meta">'+escapeHtml(opName)+(ac.seats?' &middot; '+escapeHtml(String(ac.seats))+' seats':'')+'</div></div><span class="status-badge status-pending">Pending review</span></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">'
     +'<div style="padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius);border:0.5px solid var(--border);"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.07em;font-weight:500;margin-bottom:6px;">C of R</div>'+docBtn(ac.cor_url,ac.cor_expiry)+'</div>'
     +'<div style="padding:10px 12px;background:var(--bg-secondary);border-radius:var(--radius);border:0.5px solid var(--border);"><div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.07em;font-weight:500;margin-bottom:6px;">C of A</div>'+docBtn(ac.coa_url,ac.coa_expiry)+'</div>'

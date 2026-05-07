@@ -3,6 +3,8 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/operator", "destination": "/operator/index.html" },
+    { "source": "/operator.css", "destination": "/operator/operator.css" },
+    { "source": "/operator.js", "destination": "/operator/operator.js" },
     { "source": "/operator/(.*)", "destination": "/operator/$1" }
   ],
   "headers": [
